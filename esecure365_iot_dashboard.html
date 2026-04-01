@@ -1,0 +1,476 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.db{background:#0f1117;color:#e2e8f0;min-height:100vh;font-size:13px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:0.5px solid #1e2330;background:#0f1117}
+.logo{font-size:15px;font-weight:500;color:#fff;letter-spacing:-0.3px}
+.logo span{color:#1D9E75}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-txt{font-size:11px;color:#1D9E75;font-weight:500}
+.ts{font-size:11px;color:#64748b}
+.atm-sel{background:#1a1f2e;border:0.5px solid #2a3040;color:#e2e8f0;padding:4px 8px;border-radius:6px;font-size:12px}
+.layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 41px)}
+.sidebar{background:#0b0e16;border-right:0.5px solid #1e2330;padding:12px 0}
+.sb-sec{font-size:10px;font-weight:500;color:#3a4055;padding:8px 14px 4px;letter-spacing:.08em}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;font-size:12px;color:#8892a4;border-left:2px solid transparent;transition:all .15s}
+.sb-item:hover{color:#e2e8f0;background:#12161f}
+.sb-item.active{color:#e2e8f0;background:#12161f;border-left-color:#1D9E75}
+.sb-dot{width:6px;height:6px;border-radius:50%}
+.main{padding:16px;overflow:auto}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.ph-left h2{font-size:16px;font-weight:500;color:#f1f5f9}
+.ph-left p{font-size:11px;color:#64748b;margin-top:2px}
+.alarm-btn{background:#E24B4A;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer}
+.alarm-banner{background:#2d1515;border:0.5px solid #7f2020;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.ab-left{display:flex;align-items:center;gap:10px}
+.ab-dot{width:8px;height:8px;border-radius:50%;background:#E24B4A;animation:pulse 1s infinite}
+.ab-txt{font-size:12px;font-weight:500;color:#f87171}
+.ab-sub{font-size:11px;color:#ef9999;margin-top:1px}
+.ab-btn{background:#E24B4A22;border:0.5px solid #E24B4A;color:#f87171;padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.mc{background:#12161f;border:0.5px solid #1e2330;border-radius:8px;padding:12px 14px}
+.mc-label{font-size:10px;color:#4a5568;font-weight:500;margin-bottom:6px;letter-spacing:.05em}
+.mc-val{font-size:22px;font-weight:500;line-height:1}
+.mc-sub{font-size:10px;margin-top:4px}
+.green{color:#1D9E75}.red{color:#E24B4A}.amber{color:#EF9F27}.blue{color:#378ADD}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:#12161f;border:0.5px solid #1e2330;border-radius:10px;padding:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-size:12px;font-weight:500;color:#cbd5e1}
+.badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.badge-ok{background:#0f2b1f;color:#1D9E75}
+.badge-warn{background:#2b1f0f;color:#EF9F27}
+.badge-alarm{background:#2b0f0f;color:#E24B4A}
+.sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sensor-item{background:#0f1117;border:0.5px solid #1e2330;border-radius:6px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between}
+.si-name{font-size:11px;color:#8892a4}
+.si-val{font-size:11px;font-weight:500}
+.si-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-ok{background:#1D9E75}
+.dot-alarm{background:#E24B4A;animation:pulse .8s infinite}
+.dot-warn{background:#EF9F27}
+.dot-off{background:#2a3040}
+.net-item{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #1a1f2e}
+.net-item:last-child{border-bottom:none}
+.ni-left{display:flex;align-items:center;gap:8px}
+.ni-name{font-size:12px;color:#cbd5e1}
+.ni-sub{font-size:10px;color:#4a5568}
+.signal-bars{display:flex;align-items:flex-end;gap:2px;height:12px}
+.bar{width:3px;border-radius:1px;background:#2a3040}
+.bar.on{background:#1D9E75}
+.batt-track{width:100%;height:8px;background:#1a1f2e;border-radius:4px;overflow:hidden;margin-top:6px}
+.batt-fill{height:100%;border-radius:4px;background:#1D9E75;transition:width .5s}
+.batt-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.event-item{display:flex;gap:10px;padding:7px 0;border-bottom:0.5px solid #1a1f2e}
+.event-item:last-child{border-bottom:none}
+.ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.ev-msg{font-size:11px;color:#8892a4;line-height:1.5}
+.ev-ts{font-size:10px;color:#3a4055;margin-top:2px}
+.cam-placeholder{background:#080a10;border:0.5px solid #1e2330;border-radius:6px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin-bottom:8px}
+.cam-icon{width:20px;height:20px;border:1.5px solid #2a3040;border-radius:3px;position:relative}
+.cam-icon::after{content:'';position:absolute;left:-6px;top:6px;width:5px;height:8px;background:#2a3040;border-radius:2px}
+.cam-label{font-size:10px;color:#3a4055}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse .8s infinite;display:inline-block;margin-right:4px}
+.talk-btn{width:100%;background:#1a2e1a;border:0.5px solid #1D9E75;color:#1D9E75;padding:7px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:500}
+.talk-btn:hover{background:#1D9E75;color:#fff}
+.temp-gauge{text-align:center;padding:8px 0}
+.gauge-val{font-size:28px;font-weight:500;color:#EF9F27}
+.gauge-unit{font-size:12px;color:#4a5568}
+.mini-chart{display:flex;align-items:flex-end;gap:2px;height:32px;margin-top:8px}
+.mc-bar{border-radius:2px 2px 0 0;background:#1a2e3a;flex:1;transition:height .3s}
+</style>
+
+<div class="db">
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="logo">e<span>secure</span>365</div>
+    <select class="atm-sel" onchange="switchAtm(this.value)">
+      <option value="1">ATM-KOCHI-007 — SBI, Kakkanad</option>
+      <option value="2">ATM-KOCHI-012 — HDFC, Edapally</option>
+      <option value="3">ATM-TVM-003 — Canara, Pattom</option>
+    </select>
+  </div>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;gap:5px"><div class="live-dot"></div><span class="live-txt">live</span></div>
+    <span class="ts" id="clock">18:42:05</span>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="sidebar">
+  <div class="sb-sec">monitor</div>
+  <div class="sb-item active"><div class="sb-dot" style="background:#1D9E75"></div>Live dashboard</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#378ADD"></div>Camera feeds</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#EF9F27"></div>Event log</div>
+  <div class="sb-sec">manage</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#534AB7"></div>All ATM units</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#D85A30"></div>Alarm history</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#888780"></div>Reports</div>
+  <div class="sb-sec">settings</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#888780"></div>Officers</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#888780"></div>Notifications</div>
+  <div style="margin-top:20px;padding:10px 14px;border-top:0.5px solid #1e2330">
+    <div style="font-size:10px;color:#3a4055;margin-bottom:4px">Server status</div>
+    <div style="display:flex;align-items:center;gap:5px"><div class="sb-dot" style="background:#1D9E75"></div><span style="font-size:11px;color:#1D9E75">All systems normal</span></div>
+    <div style="font-size:10px;color:#3a4055;margin-top:4px">3 units online · 0 alarms</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div id="alarm-banner" style="display:none" class="alarm-banner">
+    <div class="ab-left">
+      <div class="ab-dot"></div>
+      <div>
+        <div class="ab-txt">Intrusion detected — ATM-KOCHI-007</div>
+        <div class="ab-sub">PIR + vibration triggered · 18:41:32 · Cameras recording</div>
+      </div>
+    </div>
+    <button class="ab-btn" onclick="dismissAlarm()">Acknowledge</button>
+  </div>
+
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 id="atm-name">ATM-KOCHI-007 — SBI, Kakkanad</h2>
+      <p id="atm-sub">Last update: <span id="last-update">just now</span> &nbsp;·&nbsp; ESP32 firmware v2.1.4 &nbsp;·&nbsp; Uptime: <span id="uptime">2d 14h 22m</span></p>
+    </div>
+    <button class="alarm-btn" onclick="triggerAlarm()">Test alarm</button>
+  </div>
+
+  <div class="metrics">
+    <div class="mc">
+      <div class="mc-label">UNIT STATUS</div>
+      <div class="mc-val green" id="unit-status">Secure</div>
+      <div class="mc-sub green" id="unit-sub">All sensors normal</div>
+    </div>
+    <div class="mc">
+      <div class="mc-label">BATTERY</div>
+      <div class="mc-val" id="batt-pct" style="color:#1D9E75">87%</div>
+      <div class="mc-sub" style="color:#4a5568">Est. <span id="runtime">142</span> min runtime</div>
+    </div>
+    <div class="mc">
+      <div class="mc-label">WIFI SIGNAL</div>
+      <div class="mc-val blue" id="rssi-val">-58 dBm</div>
+      <div class="mc-sub" style="color:#4a5568">Quality: <span id="wifi-q">84%</span> · LAN active</div>
+    </div>
+    <div class="mc">
+      <div class="mc-label">TODAY'S ALERTS</div>
+      <div class="mc-val amber" id="alert-count">3</div>
+      <div class="mc-sub" style="color:#4a5568">Last: 14:22 · 0 critical</div>
+    </div>
+  </div>
+
+  <div class="row2">
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Sensor status</span>
+        <span class="badge badge-ok" id="sensor-badge">All clear</span>
+      </div>
+      <div class="sensor-grid">
+        <div class="sensor-item">
+          <span class="si-name">PIR zone 1</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="pir1">Clear</span><div class="si-dot dot-ok" id="pir1-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">PIR zone 2</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="pir2">Clear</span><div class="si-dot dot-ok" id="pir2-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">Vibration 1</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="vib1">None</span><div class="si-dot dot-ok" id="vib1-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">Vibration 2</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="vib2">None</span><div class="si-dot dot-ok" id="vib2-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">Room door</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="door1">Closed</span><div class="si-dot dot-ok" id="door1-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">Cabinet door</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="door2">Closed</span><div class="si-dot dot-ok" id="door2-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">IR beam</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="ir">Intact</span><div class="si-dot dot-ok" id="ir-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">Sound</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val green" id="sound">Normal</span><div class="si-dot dot-ok" id="sound-dot"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Environment</span>
+          <span class="badge badge-ok">Normal</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:#4a5568;margin-bottom:4px">Temp</div>
+            <div style="font-size:20px;font-weight:500;color:#EF9F27" id="temp">28.4°C</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:#4a5568;margin-bottom:4px">Humidity</div>
+            <div style="font-size:20px;font-weight:500;color:#378ADD" id="hum">62%</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:#4a5568;margin-bottom:4px">Light</div>
+            <div style="font-size:20px;font-weight:500;color:#888780" id="lux">340 lx</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <div style="font-size:10px;color:#4a5568">Trend (30 min)</div>
+          <div class="mini-chart" id="temp-chart"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Power & battery</span>
+          <span class="badge badge-ok" id="power-badge">Mains OK</span>
+        </div>
+        <div class="batt-row">
+          <span style="font-size:11px;color:#8892a4">Battery level</span>
+          <span style="font-size:12px;font-weight:500;color:#1D9E75" id="batt-label">87% — 142 min</span>
+        </div>
+        <div class="batt-track"><div class="batt-fill" id="batt-fill" style="width:87%"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+          <div class="sensor-item"><span class="si-name">Mains supply</span><span class="si-val green" id="mains">Active</span></div>
+          <div class="sensor-item"><span class="si-name">Charging</span><span class="si-val" style="color:#4a5568" id="charging">Standby</span></div>
+          <div class="sensor-item"><span class="si-name">Load current</span><span class="si-val blue" id="load">186 mA</span></div>
+          <div class="sensor-item"><span class="si-name">Voltage</span><span class="si-val blue" id="voltage">3.94 V</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="row3">
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Network status</span>
+        <span class="badge badge-ok" id="net-badge">Online</span>
+      </div>
+      <div class="net-item">
+        <div class="ni-left">
+          <div class="signal-bars">
+            <div class="bar on" style="height:4px"></div>
+            <div class="bar on" style="height:7px"></div>
+            <div class="bar on" style="height:10px"></div>
+            <div class="bar on" style="height:12px"></div>
+          </div>
+          <div><div class="ni-name">WiFi — ATM_LAN</div><div class="ni-sub">Primary · -58 dBm · 84%</div></div>
+        </div>
+        <span class="badge badge-ok">Active</span>
+      </div>
+      <div class="net-item">
+        <div class="ni-left">
+          <div class="signal-bars">
+            <div class="bar on" style="height:4px"></div>
+            <div class="bar on" style="height:7px"></div>
+            <div class="bar" style="height:10px"></div>
+            <div class="bar" style="height:12px"></div>
+          </div>
+          <div><div class="ni-name">4G dongle</div><div class="ni-sub">Standby · Jio SIM</div></div>
+        </div>
+        <span class="badge" style="background:#1a2030;color:#4a5568">Standby</span>
+      </div>
+      <div class="net-item">
+        <div class="ni-left">
+          <div style="width:14px;height:14px;border:1.5px solid #4a5568;border-radius:3px;display:flex;align-items:center;justify-content:center"><div style="width:5px;height:5px;background:#4a5568;border-radius:1px"></div></div>
+          <div><div class="ni-name">SIM800L SMS</div><div class="ni-sub">Ready · BSNL</div></div>
+        </div>
+        <span class="badge badge-ok">Ready</span>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid #1a1f2e;display:flex;justify-content:space-between">
+        <span style="font-size:10px;color:#4a5568">Ping to server</span>
+        <span style="font-size:11px;color:#1D9E75" id="ping">12 ms</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Camera feeds</span>
+        <span class="badge badge-ok" id="cam-badge">2 online</span>
+      </div>
+      <div class="cam-placeholder">
+        <div class="cam-icon"></div>
+        <div class="cam-label"><span class="rec-dot" id="rec1"></span>CAM 1 — Room view</div>
+        <div class="cam-label" style="font-size:9px;margin-top:1px">Hikvision DS-2CD2T47G2 · 1080p</div>
+      </div>
+      <div class="cam-placeholder">
+        <div class="cam-icon"></div>
+        <div class="cam-label"><span class="rec-dot" id="rec2"></span>CAM 2 — User facing</div>
+        <div class="cam-label" style="font-size:9px;margin-top:1px">Dahua IPC-HDW2849 · 1080p</div>
+      </div>
+      <button class="talk-btn" id="talk-btn" onclick="toggleTalk()">Talk to ATM room</button>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Event log</span>
+        <span style="font-size:10px;color:#4a5568">today</span>
+      </div>
+      <div id="event-log">
+        <div class="event-item">
+          <div class="ev-dot" style="background:#1D9E75"></div>
+          <div><div class="ev-msg">System startup — all sensors online</div><div class="ev-ts">08:12:04</div></div>
+        </div>
+        <div class="event-item">
+          <div class="ev-dot" style="background:#378ADD"></div>
+          <div><div class="ev-msg">Door opened — room door — 4s duration</div><div class="ev-ts">10:34:17</div></div>
+        </div>
+        <div class="event-item">
+          <div class="ev-dot" style="background:#EF9F27"></div>
+          <div><div class="ev-msg">PIR triggered — motion in zone 1 — cleared</div><div class="ev-ts">13:05:52</div></div>
+        </div>
+        <div class="event-item">
+          <div class="ev-dot" style="background:#EF9F27"></div>
+          <div><div class="ev-msg">WiFi RSSI degraded — -72 dBm — recovered</div><div class="ev-ts">14:22:08</div></div>
+        </div>
+        <div class="event-item">
+          <div class="ev-dot" style="background:#1D9E75"></div>
+          <div><div class="ev-msg">Battery 90% — mains supply normal</div><div class="ev-ts">16:00:01</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+let alarmActive = false;
+let talking = false;
+let tick = 0;
+
+const tempData = [27.8,28.0,28.1,28.3,28.2,28.4,28.5,28.4,28.3,28.4];
+
+function buildMiniChart() {
+  const c = document.getElementById('temp-chart');
+  if(!c) return;
+  c.innerHTML = '';
+  const max = Math.max(...tempData), min = Math.min(...tempData) - 0.5;
+  tempData.forEach(v => {
+    const b = document.createElement('div');
+    b.className = 'mc-bar';
+    const pct = ((v - min) / (max - min + 0.5)) * 100;
+    b.style.height = Math.round(pct) + '%';
+    b.style.background = '#1D9E75';
+    c.appendChild(b);
+  });
+}
+
+function updateClock() {
+  const now = new Date();
+  const t = [now.getHours(), now.getMinutes(), now.getSeconds()].map(x => String(x).padStart(2,'0')).join(':');
+  document.getElementById('clock').textContent = t;
+}
+
+function jitter(base, range) {
+  return (base + (Math.random()-0.5)*range).toFixed(1);
+}
+
+function updateLive() {
+  tick++;
+  if(alarmActive) return;
+  document.getElementById('temp').textContent = jitter(28.4,0.4) + '°C';
+  document.getElementById('hum').textContent = Math.round(62 + (Math.random()-0.5)*3) + '%';
+  document.getElementById('lux').textContent = Math.round(340 + (Math.random()-0.5)*20) + ' lx';
+  document.getElementById('ping').textContent = Math.round(12 + Math.random()*6) + ' ms';
+  document.getElementById('rssi-val').textContent = '-' + Math.round(58 + (Math.random()-0.5)*4) + ' dBm';
+  const wq = Math.round(84 + (Math.random()-0.5)*4);
+  document.getElementById('wifi-q').textContent = wq + '%';
+  const load = Math.round(186 + (Math.random()-0.5)*10);
+  document.getElementById('load').textContent = load + ' mA';
+  document.getElementById('voltage').textContent = (3.94 + (Math.random()-0.5)*0.04).toFixed(2) + ' V';
+  if(tick % 6 === 0) {
+    tempData.shift();
+    tempData.push(parseFloat(jitter(28.4, 0.3)));
+    buildMiniChart();
+  }
+}
+
+function triggerAlarm() {
+  alarmActive = true;
+  document.getElementById('alarm-banner').style.display = 'flex';
+  document.getElementById('unit-status').textContent = 'ALARM';
+  document.getElementById('unit-status').className = 'mc-val red';
+  document.getElementById('unit-sub').textContent = 'PIR + vibration triggered';
+  document.getElementById('unit-sub').className = 'mc-sub red';
+  document.getElementById('sensor-badge').textContent = 'ALARM';
+  document.getElementById('sensor-badge').className = 'badge badge-alarm';
+  document.getElementById('alert-count').textContent = '4';
+  setS('pir1','MOTION','red','dot-alarm');
+  setS('pir2','MOTION','red','dot-alarm');
+  setS('vib1','DETECTED','red','dot-alarm');
+  setS('ir','BROKEN','red','dot-alarm');
+  const now = new Date();
+  const ts = [now.getHours(),now.getMinutes(),now.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+  addEvent('E24B4A','ALARM: PIR zone 1+2 + vibration + IR beam triggered',ts);
+  addEvent('E24B4A','Cameras started recording — ISAPI command sent',ts);
+}
+
+function dismissAlarm() {
+  alarmActive = false;
+  document.getElementById('alarm-banner').style.display = 'none';
+  document.getElementById('unit-status').textContent = 'Secure';
+  document.getElementById('unit-status').className = 'mc-val green';
+  document.getElementById('unit-sub').textContent = 'All sensors normal';
+  document.getElementById('unit-sub').className = 'mc-sub green';
+  document.getElementById('sensor-badge').textContent = 'All clear';
+  document.getElementById('sensor-badge').className = 'badge badge-ok';
+  ['pir1','pir2','vib1','ir'].forEach(id => {
+    const defaults = {pir1:'Clear',pir2:'Clear',vib1:'None',ir:'Intact'};
+    setS(id,defaults[id],'green','dot-ok');
+  });
+}
+
+function setS(id, val, color, dotClass) {
+  const el = document.getElementById(id);
+  const dot = document.getElementById(id+'-dot');
+  if(el){el.textContent=val;el.className='si-val '+color;}
+  if(dot){dot.className='si-dot '+dotClass;}
+}
+
+function addEvent(color, msg, ts) {
+  const log = document.getElementById('event-log');
+  const item = document.createElement('div');
+  item.className = 'event-item';
+  item.innerHTML = `<div class="ev-dot" style="background:#${color}"></div><div><div class="ev-msg">${msg}</div><div class="ev-ts">${ts}</div></div>`;
+  log.insertBefore(item, log.firstChild);
+  if(log.children.length > 8) log.removeChild(log.lastChild);
+}
+
+function toggleTalk() {
+  talking = !talking;
+  const btn = document.getElementById('talk-btn');
+  btn.textContent = talking ? 'Stop talking' : 'Talk to ATM room';
+  btn.style.background = talking ? '#1D9E75' : '#1a2e1a';
+  btn.style.color = talking ? '#fff' : '#1D9E75';
+}
+
+function switchAtm(v) {
+  const names = {1:'ATM-KOCHI-007 — SBI, Kakkanad',2:'ATM-KOCHI-012 — HDFC, Edapally',3:'ATM-TVM-003 — Canara, Pattom'};
+  document.getElementById('atm-name').textContent = names[v];
+}
+
+buildMiniChart();
+setInterval(updateClock, 1000);
+setInterval(updateLive, 3000);
+updateClock();
+</script>
