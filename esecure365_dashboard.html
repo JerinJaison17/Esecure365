@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Esecure365 — ATM Security Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans,system-ui);background:#0f1117;color:#e2e8f0;min-height:100vh;font-size:13px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:.5px solid #1e2330;background:#0f1117;position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:600;color:#fff;letter-spacing:-.3px}
+.logo span{color:#1D9E75}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite}
+.live-txt{font-size:11px;color:#1D9E75;font-weight:500}
+.ts{font-size:11px;color:#64748b}
+.atm-sel{background:#1a1f2e;border:.5px solid #2a3040;color:#e2e8f0;padding:4px 8px;border-radius:6px;font-size:12px}
+.layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 41px)}
+.sidebar{background:#0b0e16;border-right:.5px solid #1e2330;padding:12px 0;position:sticky;top:41px;height:calc(100vh - 41px)}
+.sb-sec{font-size:10px;font-weight:500;color:#3a4055;padding:8px 14px 4px;letter-spacing:.08em;text-transform:uppercase}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;font-size:12px;color:#8892a4;border-left:2px solid transparent;transition:all .15s}
+.sb-item:hover{color:#e2e8f0;background:#12161f}
+.sb-item.active{color:#e2e8f0;background:#12161f;border-left-color:#1D9E75}
+.sb-dot{width:6px;height:6px;border-radius:50%}
+.main{padding:16px;overflow:auto}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.ph-left h2{font-size:16px;font-weight:500;color:#f1f5f9}
+.ph-left p{font-size:11px;color:#64748b;margin-top:2px}
+.alarm-btn{background:#E24B4A;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:.15s}
+.alarm-btn:hover{background:#c73c3c}
+
+/* Connection status banner */
+.conn-banner{background:#1a2e1a;border:.5px solid #1D9E75;border-radius:8px;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;font-size:11px}
+.conn-banner.disconnected{background:#2d1515;border-color:#7f2020}
+.conn-ip{color:#1D9E75;font-family:monospace;font-size:11px}
+.conn-ip.disconnected{color:#f87171}
+
+/* Alarm banner */
+.alarm-banner{background:#2d1515;border:.5px solid #7f2020;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;display:none}
+.ab-left{display:flex;align-items:center;gap:10px}
+.ab-dot{width:8px;height:8px;border-radius:50%;background:#E24B4A;animation:pulse .8s infinite}
+.ab-txt{font-size:12px;font-weight:500;color:#f87171}
+.ab-sub{font-size:11px;color:#ef9999;margin-top:1px}
+.ab-btn{background:#E24B4A22;border:.5px solid #E24B4A;color:#f87171;padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.mc{background:#12161f;border:.5px solid #1e2330;border-radius:8px;padding:12px 14px;transition:.3s}
+.mc-label{font-size:10px;color:#4a5568;font-weight:500;margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase}
+.mc-val{font-size:22px;font-weight:500;line-height:1;transition:color .3s}
+.mc-sub{font-size:10px;margin-top:4px;transition:color .3s}
+.green{color:#1D9E75}.red{color:#E24B4A}.amber{color:#EF9F27}.blue{color:#378ADD}.gray{color:#4a5568}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:#12161f;border:.5px solid #1e2330;border-radius:10px;padding:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-size:12px;font-weight:500;color:#cbd5e1}
+.badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;transition:.3s}
+.badge-ok{background:#0f2b1f;color:#1D9E75}
+.badge-warn{background:#2b1f0f;color:#EF9F27}
+.badge-alarm{background:#2b0f0f;color:#E24B4A}
+.badge-off{background:#1a1f2e;color:#4a5568}
+
+.sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sensor-item{background:#0f1117;border:.5px solid #1e2330;border-radius:6px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;transition:.3s}
+.sensor-item.triggered{border-color:#7f2020;background:#1a0a0a}
+.si-name{font-size:11px;color:#8892a4}
+.si-val{font-size:11px;font-weight:500;transition:.3s}
+.si-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:.3s}
+.dot-ok{background:#1D9E75}
+.dot-alarm{background:#E24B4A;animation:pulse .8s infinite}
+.dot-warn{background:#EF9F27}
+.dot-off{background:#2a3040}
+
+.net-item{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #1a1f2e}
+.net-item:last-child{border-bottom:none}
+.ni-left{display:flex;align-items:center;gap:8px}
+.ni-name{font-size:12px;color:#cbd5e1}
+.ni-sub{font-size:10px;color:#4a5568}
+.signal-bars{display:flex;align-items:flex-end;gap:2px;height:12px}
+.bar{width:3px;border-radius:1px;background:#2a3040;transition:.3s}
+.bar.on{background:#1D9E75}
+
+.batt-track{width:100%;height:8px;background:#1a1f2e;border-radius:4px;overflow:hidden;margin-top:6px}
+.batt-fill{height:100%;border-radius:4px;background:#1D9E75;transition:width .5s}
+.batt-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+
+.event-item{display:flex;gap:10px;padding:7px 0;border-bottom:.5px solid #1a1f2e}
+.event-item:last-child{border-bottom:none}
+.ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.ev-msg{font-size:11px;color:#8892a4;line-height:1.5}
+.ev-ts{font-size:10px;color:#3a4055;margin-top:2px}
+
+/* Camera feed */
+.cam-feed{border-radius:6px;overflow:hidden;background:#080a10;border:.5px solid #1e2330;margin-bottom:8px;position:relative}
+.cam-feed img{width:100%;height:120px;object-fit:cover;display:block}
+.cam-feed img.loading{opacity:.3}
+.cam-label-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,#000a);padding:4px 8px;font-size:10px;color:#8892a4;display:flex;align-items:center;justify-content:space-between}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse .8s infinite;display:inline-block;margin-right:4px}
+
+.talk-btn{width:100%;background:#1a2e1a;border:.5px solid #1D9E75;color:#1D9E75;padding:7px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:500;transition:.15s}
+.talk-btn:hover{background:#1D9E75;color:#fff}
+
+.mini-chart{display:flex;align-items:flex-end;gap:2px;height:32px;margin-top:8px}
+.mc-bar{border-radius:2px 2px 0 0;flex:1;transition:height .3s}
+
+.ip-input{background:#1a1f2e;border:.5px solid #2a3040;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;width:100%;margin-bottom:6px;font-family:monospace}
+.ip-input:focus{outline:none;border-color:#1D9E75}
+.connect-btn{background:#1D9E75;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;width:100%;font-weight:500;transition:.15s}
+.connect-btn:hover{background:#16855f}
+
+.flash{animation:flashIn .3s ease}
+@keyframes flashIn{0%{opacity:.3}100%{opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="logo">e<span>secure</span>365</div>
+    <select class="atm-sel" onchange="switchAtm(this.value)">
+      <option value="1">ATM-KOCHI-007 — SBI, Kakkanad</option>
+      <option value="2">ATM-KOCHI-012 — HDFC, Edapally</option>
+      <option value="3">ATM-TVM-003 — Canara, Pattom</option>
+    </select>
+  </div>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;gap:5px"><div class="live-dot" id="live-dot"></div><span class="live-txt" id="live-txt">connecting</span></div>
+    <span class="ts" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="sidebar">
+  <div class="sb-sec">monitor</div>
+  <div class="sb-item active"><div class="sb-dot" style="background:#1D9E75"></div>Live dashboard</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#378ADD"></div>Camera feeds</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#EF9F27"></div>Event log</div>
+  <div class="sb-sec">manage</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#534AB7"></div>All ATM units</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#D85A30"></div>Alarm history</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#888780"></div>Reports</div>
+  <div class="sb-sec">settings</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#888780"></div>Officers</div>
+  <div class="sb-item"><div class="sb-dot" style="background:#888780"></div>Notifications</div>
+
+  <!-- ESP32 IP config -->
+  <div style="margin-top:auto;padding:12px 14px;border-top:.5px solid #1e2330">
+    <div style="font-size:10px;color:#3a4055;margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em">ESP32 IP address</div>
+    <input class="ip-input" id="esp-ip" type="text" value="192.168.110.26" placeholder="e.g. 192.168.1.100">
+    <button class="connect-btn" onclick="connectWS()">Connect</button>
+    <div style="margin-top:8px;font-size:10px;color:#3a4055">WebSocket port: 81</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Connection banner -->
+  <div class="conn-banner disconnected" id="conn-banner">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="sb-dot dot-off" id="conn-dot"></div>
+      <span id="conn-txt">Not connected — enter ESP32 IP and click Connect</span>
+    </div>
+    <span class="conn-ip disconnected" id="conn-ip">ws://---.---.---.---:81</span>
+  </div>
+
+  <!-- Alarm banner -->
+  <div class="alarm-banner" id="alarm-banner">
+    <div class="ab-left">
+      <div class="ab-dot"></div>
+      <div>
+        <div class="ab-txt" id="alarm-txt">Intrusion detected</div>
+        <div class="ab-sub" id="alarm-sub">Multiple sensors triggered</div>
+      </div>
+    </div>
+    <button class="ab-btn" onclick="sendCmd('SIREN_OFF')">Acknowledge</button>
+  </div>
+
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 id="atm-name">ATM-KOCHI-007 — SBI, Kakkanad</h2>
+      <p>Last update: <span id="last-update">--</span> &nbsp;·&nbsp; Esecure365 firmware v1.0 &nbsp;·&nbsp; IP: <span id="unit-ip">--</span></p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="alarm-btn" style="background:#378ADD" onclick="sendCmd('DISARM')">Disarm</button>
+      <button class="alarm-btn" onclick="sendCmd('ARM')">Arm</button>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="mc">
+      <div class="mc-label">Unit Status</div>
+      <div class="mc-val green" id="unit-status">--</div>
+      <div class="mc-sub green" id="unit-sub">Waiting for data</div>
+    </div>
+    <div class="mc">
+      <div class="mc-label">Temperature</div>
+      <div class="mc-val amber" id="temp-metric">--°C</div>
+      <div class="mc-sub gray">Humidity: <span id="hum-metric">--%</span></div>
+    </div>
+    <div class="mc">
+      <div class="mc-label">WiFi Signal</div>
+      <div class="mc-val blue" id="rssi-val">-- dBm</div>
+      <div class="mc-sub gray">Quality: <span id="wifi-q">--%</span></div>
+    </div>
+    <div class="mc">
+      <div class="mc-label">Power</div>
+      <div class="mc-val blue" id="volt-metric">-- V</div>
+      <div class="mc-sub gray">Load: <span id="curr-metric">-- mA</span></div>
+    </div>
+  </div>
+
+  <div class="row2">
+
+    <!-- Sensors -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Sensor status</span>
+        <span class="badge badge-off" id="sensor-badge">No data</span>
+      </div>
+      <div class="sensor-grid">
+        <div class="sensor-item" id="item-pir">
+          <span class="si-name">PIR motion</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val gray" id="pir">--</span><div class="si-dot dot-off" id="pir-dot"></div></div>
+        </div>
+        <div class="sensor-item" id="item-vib">
+          <span class="si-name">Vibration</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val gray" id="vib">--</span><div class="si-dot dot-off" id="vib-dot"></div></div>
+        </div>
+        <div class="sensor-item" id="item-door">
+          <span class="si-name">Room door</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val gray" id="door">--</span><div class="si-dot dot-off" id="door-dot"></div></div>
+        </div>
+        <div class="sensor-item" id="item-ir">
+          <span class="si-name">IR beam</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val gray" id="ir">--</span><div class="si-dot dot-off" id="ir-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">Light (lux)</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val gray" id="lux">--</span><div class="si-dot dot-ok" id="lux-dot"></div></div>
+        </div>
+        <div class="sensor-item">
+          <span class="si-name">Armed</span>
+          <div style="display:flex;align-items:center;gap:6px"><span class="si-val gray" id="armed-status">--</span><div class="si-dot dot-off" id="armed-dot"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <!-- Environment -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Environment</span>
+          <span class="badge badge-ok">Live</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:#4a5568;margin-bottom:4px">Temp</div>
+            <div style="font-size:20px;font-weight:500;color:#EF9F27" id="temp">--°C</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:#4a5568;margin-bottom:4px">Humidity</div>
+            <div style="font-size:20px;font-weight:500;color:#378ADD" id="hum">--%</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:#4a5568;margin-bottom:4px">Light</div>
+            <div style="font-size:20px;font-weight:500;color:#888780" id="lux-display">-- lx</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <div style="font-size:10px;color:#4a5568">Trend</div>
+          <div class="mini-chart" id="temp-chart"></div>
+        </div>
+      </div>
+
+      <!-- Power -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Power</span>
+          <span class="badge badge-ok" id="power-badge">Live</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="sensor-item"><span class="si-name">Voltage</span><span class="si-val blue" id="voltage">-- V</span></div>
+          <div class="sensor-item"><span class="si-name">Current</span><span class="si-val blue" id="current">-- mA</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="row3">
+
+    <!-- Network -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Network</span>
+        <span class="badge badge-off" id="net-badge">Offline</span>
+      </div>
+      <div class="net-item">
+        <div class="ni-left">
+          <div class="signal-bars" id="signal-bars">
+            <div class="bar" style="height:4px"></div>
+            <div class="bar" style="height:7px"></div>
+            <div class="bar" style="height:10px"></div>
+            <div class="bar" style="height:12px"></div>
+          </div>
+          <div><div class="ni-name">WiFi</div><div class="ni-sub" id="rssi-sub">-- dBm</div></div>
+        </div>
+        <span class="badge badge-off" id="wifi-badge">--</span>
+      </div>
+      <div class="net-item">
+        <div class="ni-left">
+          <div style="width:14px;height:14px;border:1.5px solid #4a5568;border-radius:3px;display:flex;align-items:center;justify-content:center">
+            <div style="width:5px;height:5px;background:#4a5568;border-radius:1px"></div>
+          </div>
+          <div><div class="ni-name">4G A7670E</div><div class="ni-sub">Jio SIM — standby</div></div>
+        </div>
+        <span class="badge" style="background:#1a2030;color:#4a5568">Standby</span>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:.5px solid #1a1f2e;display:flex;justify-content:space-between">
+        <span style="font-size:10px;color:#4a5568">WebSocket</span>
+        <span style="font-size:11px;color:#1D9E75" id="ws-status">--</span>
+      </div>
+    </div>
+
+    <!-- Camera feed — live from ESP32 -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">OV2640 Camera</span>
+        <span class="badge badge-off" id="cam-badge">Offline</span>
+      </div>
+      <div class="cam-feed">
+        <img id="cam-img" src="" alt="Camera feed" style="height:120px;object-fit:cover;width:100%;opacity:.2" onerror="this.style.opacity='.1'">
+        <div class="cam-label-bar">
+          <span><span class="rec-dot"></span>ESP32 OV2640 · Live</span>
+          <span id="cam-res">QVGA</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="talk-btn" onclick="openStream()" style="flex:1">Open full stream</button>
+        <button class="talk-btn" onclick="snapCapture()" style="flex:1;border-color:#378ADD;color:#378ADD">Snapshot</button>
+      </div>
+    </div>
+
+    <!-- Event log -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Event log</span>
+        <span style="font-size:10px;color:#4a5568">live</span>
+      </div>
+      <div id="event-log">
+        <div class="event-item">
+          <div class="ev-dot" style="background:#3a4055"></div>
+          <div><div class="ev-msg">Dashboard loaded — waiting for ESP32 connection</div><div class="ev-ts" id="start-ts">--</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────
+let ws = null;
+let connected = false;
+let espIP = '192.168.110.26';
+let tempHistory = [];
+let alarmShown = false;
+
+// ── Clock ─────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    [now.getHours(), now.getMinutes(), now.getSeconds()]
+    .map(x => String(x).padStart(2,'0')).join(':');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Set start timestamp
+document.getElementById('start-ts').textContent = new Date().toLocaleTimeString();
+
+// ── WebSocket ─────────────────────────────────────────────────
+function connectWS() {
+  espIP = document.getElementById('esp-ip').value.trim();
+  if (!espIP) return;
+
+  if (ws) ws.close();
+
+  const url = `ws://${espIP}:81`;
+  document.getElementById('conn-ip').textContent = url;
+  addEvent('378ADD', `Connecting to ${url}...`, now());
+
+  try {
+    ws = new WebSocket(url);
+  } catch(e) {
+    addEvent('E24B4A', 'WebSocket error — check IP address', now());
+    return;
+  }
+
+  ws.onopen = () => {
+    connected = true;
+    setConnected(true);
+    // Load camera feed
+    document.getElementById('cam-img').src = `http://${espIP}/capture?t=${Date.now()}`;
+    document.getElementById('cam-badge').textContent = 'Online';
+    document.getElementById('cam-badge').className = 'badge badge-ok';
+    addEvent('1D9E75', `Connected to ESP32 at ${espIP}`, now());
+    // Refresh snapshot every 5s
+    startSnapRefresh();
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      updateDashboard(d);
+    } catch(err) {
+      console.warn('Parse error:', err);
+    }
+  };
+
+  ws.onclose = () => {
+    connected = false;
+    setConnected(false);
+    addEvent('E24B4A', 'WebSocket disconnected — reconnecting in 5s', now());
+    setTimeout(connectWS, 5000);
+  };
+
+  ws.onerror = () => {
+    addEvent('E24B4A', `Cannot reach ESP32 at ${espIP} — check IP and WiFi`, now());
+  };
+}
+
+function setConnected(ok) {
+  const banner = document.getElementById('conn-banner');
+  const txt    = document.getElementById('conn-txt');
+  const dot    = document.getElementById('conn-dot');
+  const liveDot = document.getElementById('live-dot');
+  const liveTxt = document.getElementById('live-txt');
+  const netBadge = document.getElementById('net-badge');
+  const wsStat   = document.getElementById('ws-status');
+
+  if (ok) {
+    banner.className = 'conn-banner';
+    dot.className = 'sb-dot dot-ok';
+    txt.textContent = `Live data from ESP32 @ ${espIP}`;
+    document.getElementById('conn-ip').className = 'conn-ip';
+    liveDot.style.background = '#1D9E75';
+    liveTxt.textContent = 'live';
+    netBadge.textContent = 'Online';
+    netBadge.className = 'badge badge-ok';
+    wsStat.textContent = 'Connected';
+  } else {
+    banner.className = 'conn-banner disconnected';
+    dot.className = 'sb-dot dot-off';
+    txt.textContent = 'Disconnected — retrying...';
+    document.getElementById('conn-ip').className = 'conn-ip disconnected';
+    liveDot.style.background = '#E24B4A';
+    liveTxt.textContent = 'offline';
+    netBadge.textContent = 'Offline';
+    netBadge.className = 'badge badge-alarm';
+    wsStat.textContent = 'Reconnecting...';
+  }
+}
+
+// ── Update dashboard with real data ───────────────────────────
+function updateDashboard(d) {
+  const ts = now();
+  document.getElementById('last-update').textContent = ts;
+  document.getElementById('unit-ip').textContent = espIP;
+
+  // ── Sensor status ──
+  updateSensor('pir',  d.pir,  d.pir  ? 'Motion' : 'Clear',  d.pir  ? 'MOTION'   : 'Clear',  d.pir);
+  updateSensor('vib',  d.vib,  d.vib  ? 'Detected' : 'None', d.vib  ? 'DETECTED' : 'None',   d.vib);
+  updateSensor('door', d.door, d.door ? 'OPEN'   : 'Closed', d.door ? 'OPEN'     : 'Closed', d.door);
+  updateSensor('ir',   d.ir,   d.ir   ? 'Blocked':'Intact',  d.ir   ? 'BLOCKED'  : 'Intact', d.ir);
+
+  // ── Light ──
+  el('lux').textContent = d.lux >= 0 ? d.lux.toFixed(1) + ' lx' : '--';
+  el('lux-display').textContent = d.lux >= 0 ? Math.round(d.lux) + ' lx' : '--';
+
+  // ── Environment ──
+  el('temp').textContent        = d.temp.toFixed(1) + '°C';
+  el('hum').textContent         = d.hum.toFixed(1) + '%';
+  el('temp-metric').textContent = d.temp.toFixed(1) + '°C';
+  el('hum-metric').textContent  = d.hum.toFixed(1) + '%';
+
+  // ── Power ──
+  el('voltage').textContent     = d.volt.toFixed(2) + ' V';
+  el('current').textContent     = d.curr.toFixed(1) + ' mA';
+  el('volt-metric').textContent = d.volt.toFixed(2) + ' V';
+  el('curr-metric').textContent = d.curr.toFixed(1) + ' mA';
+
+  // ── Network ──
+  el('rssi-val').textContent  = d.rssi + ' dBm';
+  el('rssi-sub').textContent  = d.rssi + ' dBm';
+  el('wifi-q').textContent    = d.wifi_q + '%';
+  el('wifi-badge').textContent = d.wifi_q > 60 ? 'Strong' : d.wifi_q > 30 ? 'Weak' : 'Poor';
+  el('wifi-badge').className   = 'badge ' + (d.wifi_q > 60 ? 'badge-ok' : d.wifi_q > 30 ? 'badge-warn' : 'badge-alarm');
+  updateSignalBars(d.rssi);
+
+  // ── Armed status ──
+  el('armed-status').textContent = d.armed ? 'Armed' : 'Disarmed';
+  el('armed-status').className = 'si-val ' + (d.armed ? 'green' : 'amber');
+  el('armed-dot').className = 'si-dot ' + (d.armed ? 'dot-ok' : 'dot-warn');
+
+  // ── Unit status ──
+  const anyTrigger = d.pir || d.vib || d.door || d.ir;
+  if (d.alarm) {
+    el('unit-status').textContent = 'ALARM';
+    el('unit-status').className = 'mc-val red';
+    el('unit-sub').textContent = 'Score: ' + d.score + ' — immediate response needed';
+    el('unit-sub').className = 'mc-sub red';
+    el('sensor-badge').textContent = 'ALARM';
+    el('sensor-badge').className = 'badge badge-alarm';
+    if (!alarmShown) {
+      alarmShown = true;
+      showAlarm(d);
+      addEvent('E24B4A', 'ALARM: Multiple sensors triggered — score ' + d.score, ts);
+    }
+  } else if (anyTrigger) {
+    el('unit-status').textContent = 'Alert';
+    el('unit-status').className = 'mc-val amber';
+    el('sensor-badge').textContent = 'Activity';
+    el('sensor-badge').className = 'badge badge-warn';
+  } else {
+    el('unit-status').textContent = d.armed ? 'Secure' : 'Disarmed';
+    el('unit-status').className = 'mc-val ' + (d.armed ? 'green' : 'amber');
+    el('unit-sub').textContent = 'All sensors clear';
+    el('unit-sub').className = 'mc-sub ' + (d.armed ? 'green' : 'amber');
+    el('sensor-badge').textContent = 'All clear';
+    el('sensor-badge').className = 'badge badge-ok';
+    alarmShown = false;
+    el('alarm-banner').style.display = 'none';
+  }
+
+  // ── Temp chart ──
+  tempHistory.push(d.temp);
+  if (tempHistory.length > 15) tempHistory.shift();
+  buildChart();
+
+  // ── Camera URLs from ESP32 ──
+  if (d.snap_url) {
+    el('unit-ip').textContent = espIP;
+  }
+}
+
+function updateSensor(id, triggered, shortVal, longVal, alarm) {
+  el(id).textContent  = shortVal;
+  el(id).className    = 'si-val ' + (alarm ? 'red' : 'green');
+  el(id+'-dot').className = 'si-dot ' + (alarm ? 'dot-alarm' : 'dot-ok');
+  const item = document.getElementById('item-'+id);
+  if (item) item.className = 'sensor-item ' + (alarm ? 'triggered' : '');
+}
+
+function showAlarm(d) {
+  const triggers = [];
+  if (d.pir)  triggers.push('PIR motion');
+  if (d.vib)  triggers.push('vibration');
+  if (d.door) triggers.push('door opened');
+  if (d.ir)   triggers.push('IR beam broken');
+  el('alarm-txt').textContent = 'ALARM — ' + el('atm-name').textContent;
+  el('alarm-sub').textContent = triggers.join(' + ') + ' — score: ' + d.score;
+  el('alarm-banner').style.display = 'flex';
+}
+
+function updateSignalBars(rssi) {
+  const bars = document.querySelectorAll('#signal-bars .bar');
+  const strength = rssi > -50 ? 4 : rssi > -60 ? 3 : rssi > -70 ? 2 : rssi > -80 ? 1 : 0;
+  bars.forEach((b, i) => {
+    b.className = 'bar ' + (i < strength ? 'on' : '');
+  });
+}
+
+function buildChart() {
+  const c = el('temp-chart');
+  c.innerHTML = '';
+  const max = Math.max(...tempHistory, 30);
+  const min = Math.min(...tempHistory, 25) - 1;
+  tempHistory.forEach(v => {
+    const b = document.createElement('div');
+    b.className = 'mc-bar';
+    const pct = ((v - min) / (max - min)) * 100;
+    b.style.height = Math.round(pct) + '%';
+    b.style.background = '#EF9F27';
+    c.appendChild(b);
+  });
+}
+
+// ── Camera ────────────────────────────────────────────────────
+let snapInterval = null;
+function startSnapRefresh() {
+  if (snapInterval) clearInterval(snapInterval);
+  snapInterval = setInterval(() => {
+    if (connected) {
+      el('cam-img').src = `http://${espIP}/capture?t=${Date.now()}`;
+      el('cam-img').style.opacity = '1';
+    }
+  }, 5000);
+  // Load immediately
+  el('cam-img').src = `http://${espIP}/capture?t=${Date.now()}`;
+  el('cam-img').style.opacity = '1';
+}
+
+function openStream() {
+  window.open(`http://${espIP}/stream`, '_blank');
+}
+
+function snapCapture() {
+  el('cam-img').src = `http://${espIP}/capture?t=${Date.now()}`;
+  addEvent('378ADD', 'Manual snapshot captured', now());
+}
+
+// ── Commands to ESP32 ─────────────────────────────────────────
+function sendCmd(cmd) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(cmd);
+    addEvent('378ADD', 'Command sent: ' + cmd, now());
+  } else {
+    addEvent('EF9F27', 'Not connected — command not sent', now());
+  }
+}
+
+// ── Event log ─────────────────────────────────────────────────
+function addEvent(color, msg, ts) {
+  const log = el('event-log');
+  const item = document.createElement('div');
+  item.className = 'event-item';
+  item.innerHTML = `<div class="ev-dot" style="background:#${color}"></div><div><div class="ev-msg">${msg}</div><div class="ev-ts">${ts}</div></div>`;
+  log.insertBefore(item, log.firstChild);
+  while (log.children.length > 10) log.removeChild(log.lastChild);
+}
+
+// ── ATM switcher ──────────────────────────────────────────────
+function switchAtm(v) {
+  const names = {1:'ATM-KOCHI-007 — SBI, Kakkanad',2:'ATM-KOCHI-012 — HDFC, Edapally',3:'ATM-TVM-003 — Canara, Pattom'};
+  el('atm-name').textContent = names[v];
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function el(id) { return document.getElementById(id); }
+function now() {
+  const d = new Date();
+  return [d.getHours(),d.getMinutes(),d.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+}
+
+// Auto-connect on load if IP is pre-filled
+window.addEventListener('load', () => {
+  addEvent('3a4055', 'Dashboard ready — click Connect to link ESP32', now());
+  connectWS();
+});
+</script>
+</body>
+</html>
